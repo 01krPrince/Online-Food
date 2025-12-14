@@ -1,0 +1,12 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: user-service
+
+  # MongoDB configuration
+  data:
+    mongodb:
+      uri: "mongodb+srv://princekr3006_user-service:NBIHYXSqZXirSNnL@user-service.h9edwgs.mongodb.net/?appName=user-service"
+      database: user-service-db
