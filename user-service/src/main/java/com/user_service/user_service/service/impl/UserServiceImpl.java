@@ -1,17 +1,27 @@
 package com.user_service.user_service.service.impl;
 
+import com.user_service.user_service.dto.LoginRequestDTO;
+import com.user_service.user_service.dto.LoginResponseDTO;
 import com.user_service.user_service.dto.RegisterRequestDTO;
+import com.user_service.user_service.enums.Role;
+import com.user_service.user_service.enums.UserStatus;
 import com.user_service.user_service.model.User;
 import com.user_service.user_service.repository.UserRepository;
+import com.user_service.user_service.security.JwtUtil;
 import com.user_service.user_service.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository repository;
+
+    // ---------------- REGISTER ----------------
 
     @Override
     public String register(RegisterRequestDTO dto) {
@@ -23,11 +33,79 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword()); // 🔐 will encrypt later
+        user.setPassword(dto.getPassword()); // 🔐 encrypt later
         user.setRole(dto.getRole());
+
+        user.setStatus(UserStatus.ACTIVE);
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
 
         repository.save(user);
 
         return "User registered successfully";
+    }
+
+    // ---------------- LOGIN ----------------
+
+    @Override
+    public LoginResponseDTO login(LoginRequestDTO dto) {
+
+        User user = repository.findByEmail(dto.getEmail())
+                .orElseThrow(() ->
+                        new RuntimeException("Invalid email or password"));
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new RuntimeException("User account is blocked");
+        }
+
+        // ⚠️ Plain password (temporary)
+        if (!user.getPassword().equals(dto.getPassword())) {
+            throw new RuntimeException("Invalid email or password");
+        }
+
+        String token = JwtUtil.generateToken(
+                user.getId(),
+                user.getRole().name()
+        );
+
+        return new LoginResponseDTO(token, user.getRole().name());
+    }
+
+    // ---------------- PROFILE ----------------
+
+    @Override
+    public User getUserById(String userId) {
+
+        return repository.findById(userId)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+    }
+
+    // ---------------- ADMIN ----------------
+
+    @Override
+    public List<User> getAllUsers() {
+        return repository.findAll();
+    }
+
+    @Override
+    public void updateStatus(String id, String status) {
+
+        User user = repository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        try {
+            UserStatus newStatus =
+                    UserStatus.valueOf(status.toUpperCase());
+
+            user.setStatus(newStatus);
+            user.setUpdatedAt(LocalDateTime.now());
+
+            repository.save(user);
+
+        } catch (IllegalArgumentException ex) {
+            throw new RuntimeException("Invalid user status");
+        }
     }
 }

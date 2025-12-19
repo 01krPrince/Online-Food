@@ -17,5 +17,5 @@ public class RegisterRequestDTO {
     @NotBlank
     private String password;
 
-    private Role role; // ADMIN / RESTAURANT / CUSTOMER
+    private Role role; // ADMIN / PROVIDER / CUSTOMER
 }
