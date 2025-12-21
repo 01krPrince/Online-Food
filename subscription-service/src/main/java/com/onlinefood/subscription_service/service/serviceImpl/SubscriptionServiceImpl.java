@@ -4,141 +4,117 @@ import com.onlinefood.subscription_service.dto.SubscriptionRequestDTO;
 import com.onlinefood.subscription_service.enums.OrderStatus;
 import com.onlinefood.subscription_service.enums.OrderType;
 import com.onlinefood.subscription_service.enums.SubscriptionStatus;
-import com.onlinefood.subscription_service.exception.SubscriptionException;
 import com.onlinefood.subscription_service.model.Order;
 import com.onlinefood.subscription_service.model.Subscription;
 import com.onlinefood.subscription_service.repository.OrderRepository;
 import com.onlinefood.subscription_service.repository.SubscriptionRepository;
 import com.onlinefood.subscription_service.service.SubscriptionService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService {
 
-    private final SubscriptionRepository repository;
-    private final OrderRepository orderRepository;
-
-    public SubscriptionServiceImpl(
-            SubscriptionRepository repository,
-            OrderRepository orderRepository) {
-
-        this.repository = repository;
-        this.orderRepository = orderRepository;
-    }
+    private final SubscriptionRepository subscriptionRepo;
+    private final OrderRepository orderRepo;
 
     @Override
     public Subscription createSubscription(
             SubscriptionRequestDTO dto,
             String userId) {
 
-        Subscription sub = new Subscription();
-        sub.setUserId(userId);
-        sub.setProviderId(dto.getProviderId());
-        sub.setPlanType(dto.getPlanType());
-        sub.setStartDate(dto.getStartDate());
-        sub.setStatus(SubscriptionStatus.ACTIVE);
-        sub.setCreatedAt(LocalDateTime.now());
+        Subscription sub = Subscription.builder()
+                .userId(userId)
+                .providerId(dto.getProviderId())
+                .startDate(dto.getStartDate())
+                .endDate(dto.getEndDate())
+                .deliveryTimes(dto.getDeliveryTimes())
+                .pausedDates(new HashSet<>())
+                .status(SubscriptionStatus.ACTIVE)
+                .createdAt(LocalDateTime.now())
+                .build();
 
-        switch (dto.getPlanType()) {
-            case DAILY -> sub.setEndDate(dto.getStartDate().plusDays(1));
-            case WEEKLY -> sub.setEndDate(dto.getStartDate().plusDays(7));
-            case MONTHLY -> sub.setEndDate(dto.getStartDate().plusDays(30));
-        }
-
-        return repository.save(sub);
+        return subscriptionRepo.save(sub);
     }
 
     @Override
-    public Subscription pauseSubscription(String id, String userId) {
-        Subscription sub = getOwned(id, userId);
-        if (sub.getStatus() != SubscriptionStatus.ACTIVE) {
-            throw new SubscriptionException("Only ACTIVE subscriptions can be paused");
-        }
-        sub.setStatus(SubscriptionStatus.PAUSED);
-        return repository.save(sub);
+    public void pauseSubscriptionForDate(
+            String subscriptionId,
+            LocalDate date,
+            String userId) {
+
+        Subscription sub = getOwned(subscriptionId, userId);
+        sub.getPausedDates().add(date);
+        subscriptionRepo.save(sub);
     }
 
     @Override
-    public Subscription resumeSubscription(String id, String userId) {
-        Subscription sub = getOwned(id, userId);
-        if (sub.getStatus() != SubscriptionStatus.PAUSED) {
-            throw new SubscriptionException("Only PAUSED subscriptions can be resumed");
-        }
-        sub.setStatus(SubscriptionStatus.ACTIVE);
-        return repository.save(sub);
-    }
+    public void cancelSubscription(
+            String subscriptionId,
+            String userId) {
 
-    @Override
-    public void cancelSubscription(String id, String userId) {
-        Subscription sub = getOwned(id, userId);
+        Subscription sub = getOwned(subscriptionId, userId);
         sub.setStatus(SubscriptionStatus.CANCELLED);
-        repository.save(sub);
+        subscriptionRepo.save(sub);
     }
 
+    /**
+     * 🔥 AUTO ORDER CREATION (Scheduler)
+     */
     @Override
-    public List<Subscription> getMySubscriptions(String userId) {
-        return repository.findByUserId(userId);
-    }
-
-    @Override
-    public List<Subscription> getByProvider(String providerId) {
-        return repository.findByProviderId(providerId);
-    }
-
-    @Override
-    public List<Subscription> getAll() {
-        return repository.findAll();
-    }
-
-    // 🔥 STEP-1 FEATURE
-    @Override
-    public void generateOrderForSubscription(String subscriptionId) {
-
-        Subscription sub = repository.findById(subscriptionId)
-                .orElseThrow(() ->
-                        new SubscriptionException("Subscription not found"));
-
-        if (sub.getStatus() != SubscriptionStatus.ACTIVE) {
-            throw new SubscriptionException("Subscription not active");
-        }
+    public void generateDailyOrders() {
 
         LocalDate today = LocalDate.now();
 
-        boolean exists =
-                orderRepository.findBySubscriptionId(subscriptionId)
-                        .stream()
-                        .anyMatch(o -> o.getDeliveryDate().equals(today));
+        List<Subscription> activeSubs =
+                subscriptionRepo.findByStatus(SubscriptionStatus.ACTIVE);
 
-        if (exists) {
-            throw new SubscriptionException("Order already generated for today");
+        for (Subscription sub : activeSubs) {
+
+            if (today.isBefore(sub.getStartDate())
+                    || today.isAfter(sub.getEndDate())) continue;
+
+            if (sub.getPausedDates().contains(today)) continue;
+
+            for (LocalTime time : sub.getDeliveryTimes()) {
+
+                boolean exists =
+                        orderRepo.existsBySubscriptionIdAndDeliveryDateAndDeliveryTime(
+                                sub.getId(), today, time);
+
+                if (exists) continue;
+
+                Order order = Order.builder()
+                        .userId(sub.getUserId())
+                        .providerId(sub.getProviderId())
+                        .orderType(OrderType.SUBSCRIPTION)
+                        .subscriptionId(sub.getId())
+                        .deliveryDate(today)
+                        .deliveryTime(time)
+                        .status(OrderStatus.CREATED)
+                        .menuItemIds(List.of())
+                        .totalAmount(0.0)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+                orderRepo.save(order);
+            }
         }
-
-        Order order = new Order();
-        order.setUserId(sub.getUserId());
-        order.setProviderId(sub.getProviderId());
-        order.setOrderType(OrderType.SUBSCRIPTION);
-        order.setSubscriptionId(subscriptionId);
-
-        order.setMenuItemIds(List.of());
-        order.setTotalAmount(0.0);
-
-        order.setDeliveryDate(today);
-        order.setStatus(OrderStatus.PLACED);
-        order.setCreatedAt(LocalDateTime.now());
-
-        orderRepository.save(order);
     }
 
     private Subscription getOwned(String id, String userId) {
-        Subscription sub = repository.findById(id)
-                .orElseThrow(() ->
-                        new SubscriptionException("Subscription not found"));
+        Subscription sub = subscriptionRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Subscription not found"));
+
         if (!sub.getUserId().equals(userId)) {
-            throw new SubscriptionException("Unauthorized access");
+            throw new RuntimeException("Unauthorized access");
         }
         return sub;
     }

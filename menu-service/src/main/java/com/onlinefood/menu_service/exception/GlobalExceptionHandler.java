@@ -13,11 +13,23 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MenuException.class)
     public ResponseEntity<?> handleMenuException(MenuException ex) {
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of(
                         "timestamp", Instant.now(),
                         "status", 400,
                         "error", ex.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleGeneric(Exception ex) {
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "timestamp", Instant.now(),
+                        "status", 500,
+                        "error", "Internal server error"
                 ));
     }
 }

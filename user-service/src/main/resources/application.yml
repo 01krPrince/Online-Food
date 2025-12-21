@@ -5,8 +5,17 @@ spring:
   application:
     name: user-service
 
-  # MongoDB configuration
   data:
     mongodb:
-      uri: "mongodb+srv://princekr3006_user-service:NBIHYXSqZXirSNnL@user-service.h9edwgs.mongodb.net/?appName=user-service"
+      uri: ${MONGODB_URI}
       database: user-service-db
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+eureka:
+  client:
+    enabled: false

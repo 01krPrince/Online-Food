@@ -3,23 +3,28 @@ package com.onlinefood.subscription_service.service;
 import com.onlinefood.subscription_service.dto.SubscriptionRequestDTO;
 import com.onlinefood.subscription_service.model.Subscription;
 
-import java.util.List;
+import java.time.LocalDate;
 
 public interface SubscriptionService {
 
-    Subscription createSubscription(SubscriptionRequestDTO dto, String userId);
+    Subscription createSubscription(
+            SubscriptionRequestDTO dto,
+            String userId
+    );
 
-    Subscription pauseSubscription(String id, String userId);
+    void pauseSubscriptionForDate(
+            String subscriptionId,
+            LocalDate date,
+            String userId
+    );
 
-    Subscription resumeSubscription(String id, String userId);
+    void cancelSubscription(
+            String subscriptionId,
+            String userId
+    );
 
-    void cancelSubscription(String id, String userId);
-
-    List<Subscription> getByProvider(String providerId);
-
-    List<Subscription> getAll();
-
-    List<Subscription> getMySubscriptions(String userId);
-
-    void generateOrderForSubscription(String subscriptionId);
+    /**
+     * Called automatically by scheduler daily
+     */
+    void generateDailyOrders();
 }

@@ -1,20 +1,24 @@
 package com.onlinefood.subscription_service.dto;
 
-import com.onlinefood.subscription_service.enums.MealType;
-import com.onlinefood.subscription_service.enums.PlanType;
-import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class SubscriptionRequestDTO {
 
-    @NotBlank
     private String providerId;
-
-    private PlanType planType;
-    private MealType mealType;
-
     private LocalDate startDate;
+    private LocalDate endDate;
+
+    /**
+     * breakfast / lunch / dinner times
+     */
+    private List<LocalTime> deliveryTimes;
 }

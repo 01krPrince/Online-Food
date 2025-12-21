@@ -1,49 +1,52 @@
 package com.onlinefood.subscription_service.controller;
 
-import com.onlinefood.subscription_service.enums.OrderType;
+import com.onlinefood.subscription_service.dto.UpdateOrderDTO;
 import com.onlinefood.subscription_service.service.OrderService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/orders")
+@RequiredArgsConstructor
 public class OrderController {
 
-    private final OrderService service;
+    private final OrderService orderService;
 
-    public OrderController(OrderService service) {
-        this.service = service;
-    }
-
-    // 🟢 CUSTOMER: PLACE ONE-TIME ORDER
-    @PostMapping
-    public ResponseEntity<?> placeOrder(
-            @RequestBody Object request,   // DTO later
+    /**
+     * CUSTOMER updates today's order
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateOrder(
+            @PathVariable String id,
+            @RequestBody UpdateOrderDTO dto,
             @RequestHeader("X-USER-ID") String userId,
             @RequestHeader("X-ROLE") String role) {
 
         if (!"CUSTOMER".equalsIgnoreCase(role)) {
-            throw new RuntimeException("Only CUSTOMER can place orders");
+            return ResponseEntity.status(403).body("Only CUSTOMER allowed");
         }
 
-        return ResponseEntity.ok(service.placeOneTimeOrder(request, userId));
+        return ResponseEntity.ok(
+                orderService.updateOrder(id, dto, userId)
+        );
     }
 
-    // 🟢 CUSTOMER: ORDER HISTORY (TOGGLE)
-    @GetMapping("/my")
-    public ResponseEntity<?> myOrders(
-            @RequestParam OrderType type,
-            @RequestHeader("X-USER-ID") String userId) {
+    /**
+     * CUSTOMER cancels order
+     * (100% refund handled elsewhere)
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> cancelOrder(
+            @PathVariable String id,
+            @RequestHeader("X-USER-ID") String userId,
+            @RequestHeader("X-ROLE") String role) {
 
-        return ResponseEntity.ok(service.getOrdersByUser(userId, type));
-    }
+        if (!"CUSTOMER".equalsIgnoreCase(role)) {
+            return ResponseEntity.status(403).body("Only CUSTOMER allowed");
+        }
 
-    // 🟢 PROVIDER: VIEW ORDERS (TOGGLE)
-    @GetMapping("/provider/{providerId}")
-    public ResponseEntity<?> providerOrders(
-            @PathVariable String providerId,
-            @RequestParam OrderType type) {
-
-        return ResponseEntity.ok(service.getOrdersByProvider(providerId, type));
+        orderService.cancelOrder(id, userId);
+        return ResponseEntity.ok("Order cancelled successfully");
     }
 }
