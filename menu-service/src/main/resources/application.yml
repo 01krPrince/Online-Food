@@ -8,6 +8,7 @@ spring:
   data:
     mongodb:
       uri: ${MONGODB_URI}
+      database: menu-service-db
 
 eureka:
   client:
@@ -15,10 +16,9 @@ eureka:
       defaultZone: ${EUREKA_URL}
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health
+  endpoint:
+    health:
+      show-details: always
 
 logging:
   level:
