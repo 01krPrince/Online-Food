@@ -3,7 +3,6 @@ package com.user_service.user_service.service.impl;
 import com.user_service.user_service.dto.LoginRequestDTO;
 import com.user_service.user_service.dto.LoginResponseDTO;
 import com.user_service.user_service.dto.RegisterRequestDTO;
-import com.user_service.user_service.enums.Role;
 import com.user_service.user_service.enums.UserStatus;
 import com.user_service.user_service.model.User;
 import com.user_service.user_service.repository.UserRepository;
@@ -39,7 +38,7 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword()); // 🔐 encrypt later
+        user.setPassword(dto.getPassword());
         user.setRole(dto.getRole());
 
         user.setStatus(UserStatus.ACTIVE);
