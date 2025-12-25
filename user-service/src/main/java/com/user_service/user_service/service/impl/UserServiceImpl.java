@@ -60,11 +60,14 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() ->
                         new RuntimeException("Invalid email or password"));
 
-        if (user.getStatus() != UserStatus.ACTIVE) {
+        if (!UserStatus.ACTIVE.equals(user.getStatus())) {
             throw new RuntimeException("User account is blocked");
         }
 
-        // ⚠️ Plain password (temporary)
+        if (user.getRole() == null) {
+            throw new RuntimeException("User role not assigned");
+        }
+
         if (!user.getPassword().equals(dto.getPassword())) {
             throw new RuntimeException("Invalid email or password");
         }
@@ -76,6 +79,7 @@ public class UserServiceImpl implements UserService {
 
         return new LoginResponseDTO(token, user.getRole().name());
     }
+
 
     // ---------------- PROFILE ----------------
 
