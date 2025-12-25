@@ -1,25 +1,42 @@
 package com.user_service.user_service.security;
 
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Date;
 
+@Component
 public class JwtUtil {
 
-    private static final String SECRET =
-            "THIS_IS_A_VERY_SECURE_SECRET_KEY_FOR_ONLINE_FOOD_APP";
+    private final Key key;
+    private final long expiration;
 
-    private static final long EXPIRATION = 86400000; // 1 day
+    public JwtUtil(
+            @Value("${JWT_SECRET}") String secret,
+            @Value("${JWT_EXPIRATION_MS:86400000}") long expiration
+    ) {
 
-    public static String generateToken(String userId, String role) {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET is not configured");
+        }
+
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.expiration = expiration;
+    }
+
+    // ✅ NON-STATIC (CORRECT)
+    public String generateToken(String userId, String role) {
 
         return Jwts.builder()
                 .setSubject(userId)
                 .claim("role", role)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
-                .signWith(SignatureAlgorithm.HS256, SECRET.getBytes())
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(key)
                 .compact();
     }
 }

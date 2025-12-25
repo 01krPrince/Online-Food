@@ -21,6 +21,12 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository repository;
 
+    private final JwtUtil jwtUtil;
+
+    public UserServiceImpl(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
+
     // ---------------- REGISTER ----------------
 
     @Override
@@ -63,7 +69,7 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Invalid email or password");
         }
 
-        String token = JwtUtil.generateToken(
+        String token = jwtUtil.generateToken(
                 user.getId(),
                 user.getRole().name()
         );
