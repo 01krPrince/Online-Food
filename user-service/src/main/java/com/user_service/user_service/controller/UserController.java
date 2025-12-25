@@ -3,6 +3,7 @@ package com.user_service.user_service.controller;
 import com.user_service.user_service.dto.LoginRequestDTO;
 import com.user_service.user_service.dto.LoginResponseDTO;
 import com.user_service.user_service.dto.RegisterRequestDTO;
+import com.user_service.user_service.enums.Role;
 import com.user_service.user_service.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,4 +66,20 @@ public class UserController {
         service.updateStatus(id, status);
         return ResponseEntity.ok("User status updated");
     }
+
+    @PatchMapping("/{id}/role")
+    public ResponseEntity<?> updateUserRole(
+            @PathVariable String id,
+            @RequestParam Role role,
+            @RequestHeader("X-ROLE") String adminRole) {
+
+        if (!"ADMIN".equalsIgnoreCase(adminRole)) {
+            throw new RuntimeException("Only ADMIN can update role");
+        }
+
+        service.updateRole(id, role);
+        return ResponseEntity.ok("User role updated");
+    }
+
+
 }

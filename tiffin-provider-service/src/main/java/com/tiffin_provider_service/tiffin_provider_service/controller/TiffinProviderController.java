@@ -4,7 +4,6 @@ import com.tiffin_provider_service.tiffin_provider_service.dto.TiffinProviderReq
 import com.tiffin_provider_service.tiffin_provider_service.dto.TiffinProviderResponseDTO;
 import com.tiffin_provider_service.tiffin_provider_service.service.TiffinProviderService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,47 +12,43 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/providers")
 public class TiffinProviderController {
 
-    @Autowired
-    private TiffinProviderService service;
+    private final TiffinProviderService service;
 
-    @PostMapping("/register")
-    public ResponseEntity<TiffinProviderResponseDTO> register(
+    public TiffinProviderController(TiffinProviderService service) {
+        this.service = service;
+    }
+
+    // PROVIDER APPLY (logged-in user only)
+    @PostMapping("/apply")
+    public ResponseEntity<TiffinProviderResponseDTO> apply(
+            @RequestHeader("X-USER-ID") String userId,
+            @RequestHeader("X-ROLE") String role,
             @Valid @RequestBody TiffinProviderRequestDTO dto) {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(service.registerProvider(dto));
+                .body(service.apply(userId, role, dto));
     }
 
-    @GetMapping
-    public ResponseEntity<?> getAll() {
-        return ResponseEntity.ok(service.getAllProviders());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable String id) {
-        return ResponseEntity.ok(service.getProviderById(id));
-    }
-
+    // ADMIN ONLY
     @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateStatus(
+    public ResponseEntity<String> updateStatus(
+            @RequestHeader("X-ROLE") String role,
             @PathVariable String id,
             @RequestParam String status) {
 
-        service.updateStatus(id, status);
-        return ResponseEntity.ok("Status updated successfully");
+        service.updateStatus(id, role, status);
+        return ResponseEntity.ok("Provider status updated");
+    }
+
+    // PUBLIC / ADMIN
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getById(@PathVariable String id) {
+        return ResponseEntity.ok(service.getById(id));
     }
 
     @GetMapping("/status/{status}")
-    public ResponseEntity<?> getAllByStatus(@PathVariable String status) {
-        return ResponseEntity.ok(service.getAllByStatus(status));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateProvider(
-            @PathVariable String id,
-            @RequestBody TiffinProviderRequestDTO dto) {
-
-        return ResponseEntity.ok(service.updateProvider(id, dto));
+    public ResponseEntity<?> getByStatus(@PathVariable String status) {
+        return ResponseEntity.ok(service.getByStatus(status));
     }
 }

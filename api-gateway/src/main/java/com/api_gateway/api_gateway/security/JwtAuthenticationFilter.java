@@ -23,16 +23,23 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange,
                              GatewayFilterChain chain) {
 
+        // ✅ ALLOW CORS PREFLIGHT
+        if ("OPTIONS".equalsIgnoreCase(
+                exchange.getRequest().getMethod().name())) {
+            return chain.filter(exchange);
+        }
+
         String path = exchange.getRequest().getURI().getPath();
 
-        // 🔓 Public endpoints (NO JWT)
+        // 🔓 Public endpoints
         if (path.contains("/users/login") ||
                 path.contains("/users/register")) {
             return chain.filter(exchange);
         }
 
         String authHeader =
-                exchange.getRequest().getHeaders()
+                exchange.getRequest()
+                        .getHeaders()
                         .getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -45,14 +52,14 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         try {
             Claims claims = jwtUtil.validateAndGetClaims(token);
 
-            String userId = claims.getSubject();        // sub
+            String userId = claims.getSubject();
             String role = claims.get("role", String.class);
 
-            // 🔒 OVERRIDE client headers (trust boundary)
             ServerWebExchange mutatedExchange =
                     exchange.mutate()
                             .request(
-                                    exchange.getRequest().mutate()
+                                    exchange.getRequest()
+                                            .mutate()
                                             .headers(headers -> {
                                                 headers.remove("X-USER-ID");
                                                 headers.remove("X-ROLE");
@@ -73,6 +80,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -1; // highest priority
+        return -1;
     }
 }

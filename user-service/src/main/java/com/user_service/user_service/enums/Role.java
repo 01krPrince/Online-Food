@@ -1,6 +1,6 @@
 package com.user_service.user_service.enums;
 
-public enum PublicRole {
+public enum Role {
     CUSTOMER,
     PROVIDER
 }

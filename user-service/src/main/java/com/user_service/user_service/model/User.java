@@ -1,6 +1,6 @@
 package com.user_service.user_service.model;
 
-import com.user_service.user_service.enums.PublicRole;
+import com.user_service.user_service.enums.Role;
 import com.user_service.user_service.enums.UserStatus;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -20,7 +20,7 @@ public class User {
     private String phone;
     private String password;
 
-    private PublicRole role;              // CUSTOMER, PROVIDER, ADMIN
+    private Role role;              // CUSTOMER, PROVIDER, ADMIN
     private UserStatus status;       // ACTIVE, BLOCKED
 
     // Only if role == PROVIDER

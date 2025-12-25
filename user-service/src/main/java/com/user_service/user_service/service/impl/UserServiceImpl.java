@@ -3,6 +3,7 @@ package com.user_service.user_service.service.impl;
 import com.user_service.user_service.dto.LoginRequestDTO;
 import com.user_service.user_service.dto.LoginResponseDTO;
 import com.user_service.user_service.dto.RegisterRequestDTO;
+import com.user_service.user_service.enums.Role;
 import com.user_service.user_service.enums.UserStatus;
 import com.user_service.user_service.model.User;
 import com.user_service.user_service.repository.UserRepository;
@@ -39,7 +40,7 @@ public class UserServiceImpl implements UserService {
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
         user.setPassword(dto.getPassword());
-        user.setRole(dto.getRole());
+        user.setRole(Role.CUSTOMER);
 
         user.setStatus(UserStatus.ACTIVE);
         user.setCreatedAt(LocalDateTime.now());
@@ -113,4 +114,15 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Invalid user status");
         }
     }
+
+    @Override
+    public void updateRole(String userId, Role role) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setRole(role);
+        user.setUpdatedAt(LocalDateTime.now());
+        repository.save(user);
+    }
+
 }

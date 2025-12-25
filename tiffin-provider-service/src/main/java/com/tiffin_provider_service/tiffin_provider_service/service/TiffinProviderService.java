@@ -7,15 +7,11 @@ import java.util.List;
 
 public interface TiffinProviderService {
 
-    TiffinProviderResponseDTO registerProvider(TiffinProviderRequestDTO dto);
+    TiffinProviderResponseDTO apply(String userId, String role, TiffinProviderRequestDTO dto);
 
-    List<TiffinProviderResponseDTO> getAllProviders();
+    void updateStatus(String providerId, String role, String status);
 
-    TiffinProviderResponseDTO getProviderById(String id);
+    Object getById(String id);
 
-    void updateStatus(String id, String status);
-
-    List<TiffinProviderResponseDTO> getAllByStatus(String status);
-
-    TiffinProviderResponseDTO updateProvider(String id, TiffinProviderRequestDTO dto);
+    List<?> getByStatus(String status);
 }

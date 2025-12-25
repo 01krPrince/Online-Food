@@ -5,12 +5,16 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "tiffin_providers")
+import java.time.LocalDateTime;
+
 @Data
+@Document(collection = "tiffin_providers")
 public class TiffinProvider {
 
     @Id
     private String id;
+
+    private String userId;
 
     private String name;
     private String email;
@@ -18,4 +22,7 @@ public class TiffinProvider {
     private String address;
 
     private ProviderStatus status;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

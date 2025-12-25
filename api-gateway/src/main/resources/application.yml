@@ -7,6 +7,23 @@ spring:
 
   cloud:
     gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - http://localhost:3000
+              - http://localhost:5173
+              - https://your-frontend-domain.onrender.com
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
       discovery:
         locator:
           enabled: true
@@ -24,3 +41,5 @@ management:
     web:
       exposure:
         include: health
+
+
