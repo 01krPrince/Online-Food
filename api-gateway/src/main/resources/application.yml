@@ -14,11 +14,15 @@ spring:
 
 eureka:
   client:
-    register-with-eureka: false
-    fetch-registry: false
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: https://online-food-eureka-server-avdz.onrender.com/eureka
 
 management:
   endpoints:
     web:
       exposure:
         include: health
+
+#https://online-food-api-gateway:onrender:com/actuator/health:
