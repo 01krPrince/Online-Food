@@ -1,7 +1,9 @@
 package com.onlinefood.menu_service.dto;
 
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Size;
+import com.onlinefood.menu_service.enums.FoodType;
+import com.onlinefood.menu_service.enums.MealType;
+import com.onlinefood.menu_service.enums.OrderType;
+import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 import java.util.List;
@@ -9,16 +11,26 @@ import java.util.List;
 @Data
 public class MenuItemUpdateRequestDTO {
 
-    @Size(min = 3, max = 50)
     private String name;
 
-    @Size(max = 300)
     private String description;
 
-    @DecimalMin(value = "1.0", message = "Price must be >= 1")
+    @Min(0)
     private Double price;
 
     private String imageUrl;
 
-    private List<@Size(max = 20) String> tags;
+    private FoodType foodType;
+
+    private MealType mealType;
+
+    private OrderType orderType;
+
+    private Boolean includedInTiffin;
+
+    private Boolean optionalAddon;
+
+    private Boolean available;
+
+    private List<String> tags;
 }

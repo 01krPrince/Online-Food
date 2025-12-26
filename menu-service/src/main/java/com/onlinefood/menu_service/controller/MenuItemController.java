@@ -19,7 +19,8 @@ public class MenuItemController {
         this.service = service;
     }
 
-    // PROVIDER: ADD ITEM TO MENU
+    // ================= PROVIDER =================
+
     @PostMapping("/menu/{menuId}")
     public Object addMenuItem(
             @PathVariable String menuId,
@@ -27,18 +28,21 @@ public class MenuItemController {
             @RequestHeader(value = "X-ROLE", required = false) String role,
             @Valid @RequestBody MenuItemCreateRequestDTO dto) {
 
-        if (userId == null || role == null) {
-            throw new MenuException("Unauthorized access (gateway only)");
-        }
-
-        if (!"PROVIDER".equalsIgnoreCase(role)) {
-            throw new MenuException("Only PROVIDER can add menu items");
-        }
-
+        authorizeProvider(userId, role);
         return service.addMenuItem(menuId, userId, dto);
     }
 
-    // PROVIDER: TOGGLE AVAILABILITY
+    @PutMapping("/{itemId}")
+    public Object updateMenuItem(
+            @PathVariable String itemId,
+            @RequestHeader("X-USER-ID") String userId,
+            @RequestHeader("X-ROLE") String role,
+            @Valid @RequestBody MenuItemUpdateRequestDTO dto) {
+
+        authorizeProvider(userId, role);
+        return service.updateMenuItem(itemId, userId, dto);
+    }
+
     @PatchMapping("/{itemId}/availability")
     public Object toggleAvailability(
             @PathVariable String itemId,
@@ -46,14 +50,12 @@ public class MenuItemController {
             @RequestHeader("X-ROLE") String role,
             @RequestParam boolean available) {
 
-        if (!"PROVIDER".equalsIgnoreCase(role)) {
-            throw new MenuException("Only PROVIDER can update availability");
-        }
-
+        authorizeProvider(userId, role);
         return service.updateAvailability(itemId, userId, available);
     }
 
-    // PUBLIC: DISCOVER ITEMS (FILTERS)
+    // ================= PUBLIC =================
+
     @GetMapping("/public")
     public Object discoverItems(
             @RequestParam(required = false) MealType mealType,
@@ -62,32 +64,19 @@ public class MenuItemController {
         return service.discoverItems(mealType, foodType);
     }
 
-    // PUBLIC: PROVIDER MENU ITEMS
     @GetMapping("/public/provider/{providerId}")
     public Object getProviderItems(@PathVariable String providerId) {
         return service.getAvailableItemsByProvider(providerId);
     }
 
-    // PROVIDER: UPDATE MENU ITEM DETAILS
-    @PutMapping("/{itemId}")
-    public Object updateMenuItem(
-            @PathVariable String itemId,
-            @RequestHeader("X-USER-ID") String userId,
-            @RequestHeader("X-ROLE") String role,
-            @Valid @RequestBody MenuItemUpdateRequestDTO dto) {
+    // ================= COMMON =================
 
+    private void authorizeProvider(String userId, String role) {
         if (userId == null || role == null) {
             throw new MenuException("Unauthorized access (gateway only)");
         }
-
         if (!"PROVIDER".equalsIgnoreCase(role)) {
-            throw new MenuException("Only PROVIDER can update menu items");
+            throw new MenuException("Only PROVIDER allowed");
         }
-
-        return service.updateMenuItem(itemId, userId, dto);
     }
-
-
-
 }
-

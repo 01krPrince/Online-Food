@@ -2,6 +2,7 @@ package com.onlinefood.menu_service.model;
 
 import com.onlinefood.menu_service.enums.FoodType;
 import com.onlinefood.menu_service.enums.MealType;
+import com.onlinefood.menu_service.enums.OrderType;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -9,33 +10,46 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Document(collection = "menu_items")
 @Data
+@Document(collection = "menu_items")
 public class MenuItem {
 
     @Id
     private String id;
 
-    private String providerId;     // redundancy for fast lookup
+    // 🔑 RELATION
+    private String providerId;     // owner
     private String menuId;         // parent menu
 
-    private String name;
+    // 🍛 ITEM INFO
+    private String name;           // Dal Fry, Paneer Sabji
     private String description;
-
-    private double price;
 
     private String imageUrl;
 
+    // 💰 PRICE
+    private double price;          // per plate OR per meal
+
+    // 🍽 CONTEXT
     private FoodType foodType;     // VEG / NON_VEG
     private MealType mealType;     // BREAKFAST / LUNCH / DINNER
+    private OrderType orderType;   // TIFFIN / CASUAL / BOTH
 
-    private boolean available;     // provider toggle
+    // 📦 TIFFIN SPECIFIC
+    private boolean includedInTiffin;   // part of daily tiffin
+    private boolean optionalAddon;      // extra item (curd, sweet)
 
+    // ⚙️ AVAILABILITY
+    private boolean available;
+
+    // 📊 RATING
     private double rating;
     private int ratingCount;
 
-    private List<String> tags;     // spicy, healthy, etc.
+    // 🏷 TAGS
+    private List<String> tags;     // spicy, healthy, diabetic, etc.
 
+    // 🕒 META
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -11,14 +11,14 @@ public interface MenuItemRepository extends MongoRepository<MenuItem, String> {
 
     List<MenuItem> findByProviderIdAndAvailableTrue(String providerId);
 
-    List<MenuItem> findByMealTypeAndFoodTypeAndAvailableTrue(
+    List<MenuItem> findByAvailableTrue();
+
+    List<MenuItem> findByAvailableTrueAndMealType(MealType mealType);
+
+    List<MenuItem> findByAvailableTrueAndFoodType(FoodType foodType);
+
+    List<MenuItem> findByAvailableTrueAndMealTypeAndFoodType(
             MealType mealType,
             FoodType foodType
     );
-
-    List<MenuItem> findByMealTypeAndAvailableTrue(MealType mealType);
-
-    List<MenuItem> findByFoodTypeAndAvailableTrue(FoodType foodType);
-
-    List<MenuItem> findByMenuId(String menuId);
 }
