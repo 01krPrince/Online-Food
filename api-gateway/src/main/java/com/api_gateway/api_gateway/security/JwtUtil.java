@@ -17,14 +17,10 @@ public class JwtUtil {
     public JwtUtil(@Value("${JWT_SECRET}") String secret) {
 
         if (secret == null || secret.length() < 32) {
-            throw new IllegalStateException(
-                    "JWT_SECRET is missing or too short (minimum 32 characters required)"
-            );
+            throw new IllegalStateException("JWT_SECRET too short");
         }
 
-        this.key = Keys.hmacShaKeyFor(
-                secret.getBytes(StandardCharsets.UTF_8)
-        );
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public Claims validateAndGetClaims(String token) {
@@ -35,3 +31,4 @@ public class JwtUtil {
                 .getBody();
     }
 }
+

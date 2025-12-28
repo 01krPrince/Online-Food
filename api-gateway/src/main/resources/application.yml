@@ -5,31 +5,31 @@ spring:
   application:
     name: api-gateway
 
+  webflux:
+    cors:
+      allowed-origins:
+        - http://localhost:5173
+        - http://localhost:3000
+        - https://tiffine-online.netlify.app
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowed-headers:
+        - Authorization
+        - Content-Type
+        - X-USER-ID
+        - X-ROLE
+        - X-INTERNAL-KEY
+      exposed-headers:
+        - Authorization
+      allow-credentials: true
+
   cloud:
     gateway:
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins:
-              - http://localhost:3000
-              - http://localhost:5173
-              - https://tiffine-online.netlify.app
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - PATCH
-              - DELETE
-              - OPTIONS
-            allowedHeaders:
-              - Authorization
-              - Content-Type
-              - X-USER-ID
-              - X-ROLE
-              - X-INTERNAL-KEY
-            exposedHeaders:
-              - Authorization
-            allowCredentials: true
       discovery:
         locator:
           enabled: true

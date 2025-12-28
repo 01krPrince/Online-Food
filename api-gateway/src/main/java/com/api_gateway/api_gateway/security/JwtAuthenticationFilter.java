@@ -6,6 +6,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -29,21 +30,18 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange,
                              GatewayFilterChain chain) {
 
-        // ✅ Allow CORS preflight
-        if ("OPTIONS".equalsIgnoreCase(
-                exchange.getRequest().getMethod().name())) {
+        if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
             return chain.filter(exchange);
         }
 
         String path = exchange.getRequest().getURI().getPath();
 
         // 🔓 Public endpoints
-        if (path.contains("/users/login") ||
-                path.contains("/users/register")) {
+        if (path.startsWith("/users/login")
+                || path.startsWith("/users/register")) {
             return chain.filter(exchange);
         }
 
-        // 🔐 JWT validation
         String authHeader = exchange.getRequest()
                 .getHeaders()
                 .getFirst(HttpHeaders.AUTHORIZATION);
@@ -63,30 +61,18 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
             ServerWebExchange mutatedExchange =
                     exchange.mutate()
-                            .request(
-                                    exchange.getRequest()
-                                            .mutate()
-                                            .headers(headers -> {
-                                                headers.remove("X-USER-ID");
-                                                headers.remove("X-ROLE");
-                                                headers.remove("X-INTERNAL-KEY");
-
-                                                headers.add("X-USER-ID", userId);
-                                                headers.add("X-ROLE", role);
-
-                                                // 🔥 VERY IMPORTANT
-                                                headers.add(
-                                                        "X-INTERNAL-KEY",
-                                                        gatewaySecret
-                                                );
-                                            })
-                                            .build()
-                            )
+                            .request(exchange.getRequest().mutate()
+                                    .headers(headers -> {
+                                        headers.set("X-USER-ID", userId);
+                                        headers.set("X-ROLE", role);
+                                        headers.set("X-INTERNAL-KEY", gatewaySecret);
+                                    })
+                                    .build())
                             .build();
 
             return chain.filter(mutatedExchange);
 
-        } catch (Exception ex) {
+        } catch (Exception e) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }
@@ -94,6 +80,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -1; // highest priority
+        return -1;
     }
 }
