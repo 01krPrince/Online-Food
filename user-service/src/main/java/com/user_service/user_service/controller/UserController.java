@@ -3,6 +3,7 @@ package com.user_service.user_service.controller;
 import com.user_service.user_service.dto.LoginRequestDTO;
 import com.user_service.user_service.dto.LoginResponseDTO;
 import com.user_service.user_service.dto.RegisterRequestDTO;
+import com.user_service.user_service.dto.VerifyOtpDTO;
 import com.user_service.user_service.enums.Role;
 import com.user_service.user_service.exception.UserException;
 import com.user_service.user_service.service.UserService;
@@ -30,6 +31,11 @@ public class UserController {
     public ResponseEntity<String> register(
             @Valid @RequestBody RegisterRequestDTO dto) {
         return ResponseEntity.status(201).body(service.register(dto));
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<String> verifyOtp(@RequestBody VerifyOtpDTO dto) {
+        return ResponseEntity.ok(service.verifyOtp(dto));
     }
 
     @PostMapping("/login")

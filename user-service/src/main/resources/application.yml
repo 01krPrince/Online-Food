@@ -5,6 +5,19 @@ spring:
   application:
     name: user-service
 
+  # 👇 NEW MAIL CONFIGURATION (With Variables)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}  # Set this in your environment variables
+    password: ${MAIL_PASSWORD}  # Set this in your environment variables
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   data:
     mongodb:
       uri: ${MONGODB_URI}

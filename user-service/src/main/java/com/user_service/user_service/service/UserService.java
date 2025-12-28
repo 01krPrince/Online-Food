@@ -4,6 +4,7 @@ package com.user_service.user_service.service;
 import com.user_service.user_service.dto.LoginRequestDTO;
 import com.user_service.user_service.dto.LoginResponseDTO;
 import com.user_service.user_service.dto.RegisterRequestDTO;
+import com.user_service.user_service.dto.VerifyOtpDTO;
 import com.user_service.user_service.enums.Role;
 
 public interface UserService {
@@ -18,4 +19,7 @@ public interface UserService {
     void updateStatus(String id, String status);
 
     public void updateRole(String userId, Role role);
+
+    String verifyOtp(VerifyOtpDTO dto);
+
 }

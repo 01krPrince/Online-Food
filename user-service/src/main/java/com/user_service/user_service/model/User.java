@@ -28,4 +28,8 @@ public class User {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private String otp;
+    private LocalDateTime otpExpiration;
+    private boolean isVerified = false;
 }
