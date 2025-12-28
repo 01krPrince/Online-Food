@@ -11,35 +11,36 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@Document(collection = "menu_items")
-public class MenuItem {
+@Document(collection = "items")
+public class Item {
 
     @Id
     private String id;
 
-    // 🔑 RELATION
-    private String providerId;     // owner
-    private String menuId;         // parent menu
+    // 🔑 OWNERSHIP
+    private String providerId;
+
+    // 🔗 MULTI MENU REFERENCE
+    private List<String> menuIds;   // can belong to multiple menus
 
     // 🍛 ITEM INFO
-    private String name;           // Dal Fry, Paneer Sabji
+    private String name;
     private String description;
-
     private String imageUrl;
 
     // 💰 PRICE
-    private double price;          // per plate OR per meal
+    private double price;
 
     // 🍽 CONTEXT
-    private FoodType foodType;     // VEG / NON_VEG
-    private MealType mealType;     // BREAKFAST / LUNCH / DINNER
-    private OrderType orderType;   // TIFFIN / CASUAL / BOTH
+    private FoodType foodType;
+    private MealType mealType;
+    private OrderType orderType;
 
-    // 📦 TIFFIN SPECIFIC
-    private boolean includedInTiffin;   // part of daily tiffin
-    private boolean optionalAddon;      // extra item (curd, sweet)
+    // 📦 TIFFIN
+    private boolean includedInTiffin;
+    private boolean optionalAddon;
 
-    // ⚙️ AVAILABILITY
+    // ⚙️ STATUS
     private boolean available;
 
     // 📊 RATING
@@ -47,7 +48,7 @@ public class MenuItem {
     private int ratingCount;
 
     // 🏷 TAGS
-    private List<String> tags;     // spicy, healthy, diabetic, etc.
+    private List<String> tags;
 
     // 🕒 META
     private LocalDateTime createdAt;
