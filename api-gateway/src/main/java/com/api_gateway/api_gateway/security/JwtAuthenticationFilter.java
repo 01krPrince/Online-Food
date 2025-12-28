@@ -1,6 +1,7 @@
 package com.api_gateway.api_gateway.security;
 
 import io.jsonwebtoken.Claims;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -14,16 +15,21 @@ import reactor.core.publisher.Mono;
 public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private final JwtUtil jwtUtil;
+    private final String gatewaySecret;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
+    public JwtAuthenticationFilter(
+            JwtUtil jwtUtil,
+            @Value("${GATEWAY_INTERNAL_SECRET}") String gatewaySecret
+    ) {
         this.jwtUtil = jwtUtil;
+        this.gatewaySecret = gatewaySecret;
     }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange,
                              GatewayFilterChain chain) {
 
-        // ✅ ALLOW CORS PREFLIGHT
+        // ✅ Allow CORS preflight
         if ("OPTIONS".equalsIgnoreCase(
                 exchange.getRequest().getMethod().name())) {
             return chain.filter(exchange);
@@ -37,10 +43,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        String authHeader =
-                exchange.getRequest()
-                        .getHeaders()
-                        .getFirst(HttpHeaders.AUTHORIZATION);
+        // 🔐 JWT validation
+        String authHeader = exchange.getRequest()
+                .getHeaders()
+                .getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
@@ -63,8 +69,16 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                                             .headers(headers -> {
                                                 headers.remove("X-USER-ID");
                                                 headers.remove("X-ROLE");
+                                                headers.remove("X-INTERNAL-KEY");
+
                                                 headers.add("X-USER-ID", userId);
                                                 headers.add("X-ROLE", role);
+
+                                                // 🔥 VERY IMPORTANT
+                                                headers.add(
+                                                        "X-INTERNAL-KEY",
+                                                        gatewaySecret
+                                                );
                                             })
                                             .build()
                             )
@@ -80,6 +94,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -1;
+        return -1; // highest priority
     }
 }

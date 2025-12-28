@@ -2,8 +2,10 @@ package com.tiffin_provider_service.tiffin_provider_service.controller;
 
 import com.tiffin_provider_service.tiffin_provider_service.dto.TiffinProviderRequestDTO;
 import com.tiffin_provider_service.tiffin_provider_service.dto.TiffinProviderResponseDTO;
+import com.tiffin_provider_service.tiffin_provider_service.exception.ProviderException;
 import com.tiffin_provider_service.tiffin_provider_service.service.TiffinProviderService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,34 +16,52 @@ public class TiffinProviderController {
 
     private final TiffinProviderService service;
 
+    @Value("${GATEWAY_INTERNAL_SECRET}")
+    private String gatewaySecret;
+
     public TiffinProviderController(TiffinProviderService service) {
         this.service = service;
     }
 
-    // PROVIDER APPLY (logged-in user only)
+    // ================= CUSTOMER =================
+
+    /**
+     * CUSTOMER applies to become PROVIDER
+     */
     @PostMapping("/apply")
     public ResponseEntity<TiffinProviderResponseDTO> apply(
-            @RequestHeader("X-USER-ID") String userId,
-            @RequestHeader("X-ROLE") String role,
+            @RequestHeader(value = "X-INTERNAL-KEY", required = false) String internalKey,
+            @RequestHeader(value = "X-USER-ID", required = false) String userId,
+            @RequestHeader(value = "X-ROLE", required = false) String role,
             @Valid @RequestBody TiffinProviderRequestDTO dto) {
+
+        authorizeCustomer(userId, role, internalKey);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(service.apply(userId, role, dto));
     }
 
-    // ADMIN ONLY
+    // ================= ADMIN =================
+
+    /**
+     * ADMIN approves / blocks provider
+     */
     @PutMapping("/{id}/status")
     public ResponseEntity<String> updateStatus(
-            @RequestHeader("X-ROLE") String role,
+            @RequestHeader(value = "X-INTERNAL-KEY", required = false) String internalKey,
+            @RequestHeader(value = "X-ROLE", required = false) String role,
             @PathVariable String id,
             @RequestParam String status) {
+
+        authorizeAdmin(role, internalKey);
 
         service.updateStatus(id, role, status);
         return ResponseEntity.ok("Provider status updated");
     }
 
-    // PUBLIC / ADMIN
+    // ================= PUBLIC =================
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable String id) {
         return ResponseEntity.ok(service.getById(id));
@@ -50,5 +70,35 @@ public class TiffinProviderController {
     @GetMapping("/status/{status}")
     public ResponseEntity<?> getByStatus(@PathVariable String status) {
         return ResponseEntity.ok(service.getByStatus(status));
+    }
+
+    // ================= COMMON =================
+
+    private void authorizeCustomer(
+            String userId,
+            String role,
+            String internalKey
+    ) {
+        if (internalKey == null || !internalKey.equals(gatewaySecret)) {
+            throw new ProviderException("Direct access forbidden");
+        }
+        if (userId == null || role == null) {
+            throw new ProviderException("Unauthorized access (gateway only)");
+        }
+        if (!"CUSTOMER".equalsIgnoreCase(role)) {
+            throw new ProviderException("Only CUSTOMER allowed");
+        }
+    }
+
+    private void authorizeAdmin(
+            String role,
+            String internalKey
+    ) {
+        if (internalKey == null || !internalKey.equals(gatewaySecret)) {
+            throw new ProviderException("Direct access forbidden");
+        }
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            throw new ProviderException("Only ADMIN allowed");
+        }
     }
 }

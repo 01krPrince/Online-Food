@@ -7,6 +7,7 @@ import com.onlinefood.menu_service.enums.MealType;
 import com.onlinefood.menu_service.exception.MenuException;
 import com.onlinefood.menu_service.service.MenuItemService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,6 +15,9 @@ import org.springframework.web.bind.annotation.*;
 public class MenuItemController {
 
     private final MenuItemService service;
+
+    @Value("${GATEWAY_INTERNAL_SECRET}")
+    private String gatewaySecret;
 
     public MenuItemController(MenuItemService service) {
         this.service = service;
@@ -24,33 +28,36 @@ public class MenuItemController {
     @PostMapping("/menu/{menuId}")
     public Object addMenuItem(
             @PathVariable String menuId,
+            @RequestHeader(value = "X-INTERNAL-KEY", required = false) String internalKey,
             @RequestHeader(value = "X-USER-ID", required = false) String userId,
             @RequestHeader(value = "X-ROLE", required = false) String role,
             @Valid @RequestBody MenuItemCreateRequestDTO dto) {
 
-        authorizeProvider(userId, role);
+        authorizeProvider(userId, role, internalKey);
         return service.addMenuItem(menuId, userId, dto);
     }
 
     @PutMapping("/{itemId}")
     public Object updateMenuItem(
             @PathVariable String itemId,
-            @RequestHeader("X-USER-ID") String userId,
-            @RequestHeader("X-ROLE") String role,
+            @RequestHeader(value = "X-INTERNAL-KEY", required = false) String internalKey,
+            @RequestHeader(value = "X-USER-ID", required = false) String userId,
+            @RequestHeader(value = "X-ROLE", required = false) String role,
             @Valid @RequestBody MenuItemUpdateRequestDTO dto) {
 
-        authorizeProvider(userId, role);
+        authorizeProvider(userId, role, internalKey);
         return service.updateMenuItem(itemId, userId, dto);
     }
 
     @PatchMapping("/{itemId}/availability")
     public Object toggleAvailability(
             @PathVariable String itemId,
-            @RequestHeader("X-USER-ID") String userId,
-            @RequestHeader("X-ROLE") String role,
+            @RequestHeader(value = "X-INTERNAL-KEY", required = false) String internalKey,
+            @RequestHeader(value = "X-USER-ID", required = false) String userId,
+            @RequestHeader(value = "X-ROLE", required = false) String role,
             @RequestParam boolean available) {
 
-        authorizeProvider(userId, role);
+        authorizeProvider(userId, role, internalKey);
         return service.updateAvailability(itemId, userId, available);
     }
 
@@ -71,7 +78,14 @@ public class MenuItemController {
 
     // ================= COMMON =================
 
-    private void authorizeProvider(String userId, String role) {
+    private void authorizeProvider(
+            String userId,
+            String role,
+            String internalKey
+    ) {
+        if (internalKey == null || !internalKey.equals(gatewaySecret)) {
+            throw new MenuException("Direct access forbidden");
+        }
         if (userId == null || role == null) {
             throw new MenuException("Unauthorized access (gateway only)");
         }
@@ -80,3 +94,4 @@ public class MenuItemController {
         }
     }
 }
+
