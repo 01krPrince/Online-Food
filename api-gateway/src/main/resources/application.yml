@@ -22,7 +22,13 @@ spring:
               - DELETE
               - OPTIONS
             allowedHeaders:
-              - "*"
+              - Authorization
+              - Content-Type
+              - X-USER-ID
+              - X-ROLE
+              - X-INTERNAL-KEY
+            exposedHeaders:
+              - Authorization
             allowCredentials: true
       discovery:
         locator:
@@ -41,5 +47,3 @@ management:
     web:
       exposure:
         include: health
-
-
