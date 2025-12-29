@@ -3,9 +3,11 @@ package com.tiffin_provider_service.tiffin_provider_service.service.serviceImpl;
 import com.tiffin_provider_service.tiffin_provider_service.dto.TiffinProviderRequestDTO;
 import com.tiffin_provider_service.tiffin_provider_service.dto.TiffinProviderResponseDTO;
 import com.tiffin_provider_service.tiffin_provider_service.enums.ProviderStatus;
+import com.tiffin_provider_service.tiffin_provider_service.exception.UnauthorizedException;
 import com.tiffin_provider_service.tiffin_provider_service.model.TiffinProvider;
 import com.tiffin_provider_service.tiffin_provider_service.repository.TiffinProviderRepository;
 import com.tiffin_provider_service.tiffin_provider_service.service.TiffinProviderService;
+import jakarta.ws.rs.BadRequestException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,12 +28,12 @@ public class TiffinProviderServiceImpl implements TiffinProviderService {
             String role,
             TiffinProviderRequestDTO dto) {
 
-        if (!"PROVIDER".equalsIgnoreCase(role)) {
-            throw new RuntimeException("Only PROVIDER can apply");
+        if (!"CUSTOMER".equalsIgnoreCase(role)) {
+            throw new UnauthorizedException("Only CUSTOMER can apply");
         }
 
         if (repository.existsByUserId(userId)) {
-            throw new RuntimeException("Provider profile already exists");
+            throw new BadRequestException("Provider profile already exists");
         }
 
         TiffinProvider provider = new TiffinProvider();
@@ -40,6 +42,7 @@ public class TiffinProviderServiceImpl implements TiffinProviderService {
         provider.setEmail(dto.getEmail());
         provider.setPhone(dto.getPhone());
         provider.setAddress(dto.getAddress());
+        provider.setLegalAndFinancialDetails(dto.getLegalAndFinancialDetails());
         provider.setStatus(ProviderStatus.PENDING);
         provider.setCreatedAt(LocalDateTime.now());
         provider.setUpdatedAt(LocalDateTime.now());
@@ -52,6 +55,7 @@ public class TiffinProviderServiceImpl implements TiffinProviderService {
                 provider.getStatus()
         );
     }
+
 
     @Override
     public void updateStatus(String providerId, String role, String status) {

@@ -86,6 +86,13 @@
 			<version>2.5.0</version>
 		</dependency>
 
+		<!-- Spring Security (required for SecurityConfig) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+
 	</dependencies>
 
 	<!-- Spring Cloud BOM -->

@@ -19,8 +19,9 @@ public class TiffinProvider {
     private String name;
     private String email;
     private String phone;
-    private String address;
+    private Address address;
 
+    private LegalAndFinancialDetails legalAndFinancialDetails;
     private ProviderStatus status;
 
     private LocalDateTime createdAt;

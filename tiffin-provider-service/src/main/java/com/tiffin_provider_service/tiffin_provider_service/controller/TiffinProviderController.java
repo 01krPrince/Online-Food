@@ -3,6 +3,7 @@ package com.tiffin_provider_service.tiffin_provider_service.controller;
 import com.tiffin_provider_service.tiffin_provider_service.dto.TiffinProviderRequestDTO;
 import com.tiffin_provider_service.tiffin_provider_service.dto.TiffinProviderResponseDTO;
 import com.tiffin_provider_service.tiffin_provider_service.exception.ProviderException;
+import com.tiffin_provider_service.tiffin_provider_service.exception.UnauthorizedException;
 import com.tiffin_provider_service.tiffin_provider_service.service.TiffinProviderService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +29,20 @@ public class TiffinProviderController {
     /**
      * CUSTOMER applies to become PROVIDER
      */
+//    @PostMapping("/apply")
+//    public ResponseEntity<TiffinProviderResponseDTO> apply(
+//            @RequestHeader(value = "X-INTERNAL-KEY", required = false) String internalKey,
+//            @RequestHeader(value = "X-USER-ID", required = false) String userId,
+//            @RequestHeader(value = "X-ROLE", required = false) String role,
+//            @Valid @RequestBody TiffinProviderRequestDTO dto) {
+//
+//        authorizeCustomer(userId, role, internalKey);
+//
+//        return ResponseEntity
+//                .status(HttpStatus.CREATED)
+//                .body(service.apply(userId, role, dto));
+//    }
+
     @PostMapping("/apply")
     public ResponseEntity<TiffinProviderResponseDTO> apply(
             @RequestHeader(value = "X-INTERNAL-KEY", required = false) String internalKey,
@@ -35,12 +50,18 @@ public class TiffinProviderController {
             @RequestHeader(value = "X-ROLE", required = false) String role,
             @Valid @RequestBody TiffinProviderRequestDTO dto) {
 
+        System.out.println("INTERNAL KEY FROM GATEWAY = " + internalKey);
+        System.out.println("USER ID = " + userId);
+        System.out.println("ROLE = " + role);
+        System.out.println("EXPECTED INTERNAL KEY = " + gatewaySecret);
+
         authorizeCustomer(userId, role, internalKey);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(service.apply(userId, role, dto));
     }
+
 
     // ================= ADMIN =================
 
@@ -74,21 +95,17 @@ public class TiffinProviderController {
 
     // ================= COMMON =================
 
-    private void authorizeCustomer(
-            String userId,
-            String role,
-            String internalKey
-    ) {
-        if (internalKey == null || !internalKey.equals(gatewaySecret)) {
-            throw new ProviderException("Direct access forbidden");
+    private void authorizeCustomer(String userId, String role, String internalKey) {
+
+        if (internalKey == null || !gatewaySecret.equals(internalKey)) {
+            throw new UnauthorizedException("Invalid internal gateway key");
         }
-        if (userId == null || role == null) {
-            throw new ProviderException("Unauthorized access (gateway only)");
-        }
-        if (!"CUSTOMER".equalsIgnoreCase(role)) {
-            throw new ProviderException("Only CUSTOMER allowed");
+
+        if (userId == null) {
+            throw new UnauthorizedException("User not authenticated");
         }
     }
+
 
     private void authorizeAdmin(
             String role,
