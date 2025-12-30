@@ -22,13 +22,21 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             JwtUtil jwtUtil,
             @Value("${GATEWAY_INTERNAL_SECRET}") String gatewaySecret
     ) {
+        System.out.println("Step: 3API-Gateway");
+
         this.jwtUtil = jwtUtil;
         this.gatewaySecret = gatewaySecret;
     }
 
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange,
                              GatewayFilterChain chain) {
+        System.out.println("==== GATEWAY FILTER HIT ====");
+        System.out.println("PATH = " + exchange.getRequest().getURI());
+        System.out.println("AUTH HEADER = " +
+                exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION));
+        System.out.println("===========================");
 
         if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
             return chain.filter(exchange);
@@ -53,7 +61,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         }
 
         String token = authHeader.substring(7);
-
         try {
             Claims claims = jwtUtil.validateAndGetClaims(token);
 

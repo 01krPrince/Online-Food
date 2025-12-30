@@ -16,7 +16,7 @@ public class CorsConfig {
         CorsConfiguration corsConfig = new CorsConfiguration();
         
         // 1. Allow your frontend origin
-        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:5173", "https://tiffine-online.netlify.app"));
         
         // 2. Allow typical HTTP methods
         corsConfig.setMaxAge(3600L);
