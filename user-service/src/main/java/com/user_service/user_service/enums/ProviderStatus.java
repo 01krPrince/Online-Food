@@ -1,4 +1,4 @@
-package com.tiffin_provider_service.tiffin_provider_service.enums;
+package com.user_service.user_service.enums;
 
 public enum ProviderStatus {
     PENDING,

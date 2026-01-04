@@ -1,6 +1,7 @@
-package com.tiffin_provider_service.tiffin_provider_service.exception;
+package com.user_service.user_service.exception; // (Or your provider package)
 
 public class UnauthorizedException extends RuntimeException {
+    
     public UnauthorizedException(String message) {
         super(message);
     }

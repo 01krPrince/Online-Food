@@ -1,4 +1,4 @@
-package com.tiffin_provider_service.tiffin_provider_service.model;
+package com.user_service.user_service.model;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

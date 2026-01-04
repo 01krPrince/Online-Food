@@ -1,6 +1,6 @@
-package com.tiffin_provider_service.tiffin_provider_service.model;
+package com.user_service.user_service.model;
 
-import com.tiffin_provider_service.tiffin_provider_service.enums.ProviderStatus;
+import com.user_service.user_service.enums.ProviderStatus;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -16,7 +16,7 @@ public class TiffinProvider {
 
     private String userId;
 
-    private String name;
+    private String kitchenName;
     private String email;
     private String phone;
     private Address address;

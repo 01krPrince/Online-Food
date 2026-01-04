@@ -1,17 +1,20 @@
 package com.user_service.user_service.service.impl;
 
-import com.user_service.user_service.dto.LoginRequestDTO;
-import com.user_service.user_service.dto.LoginResponseDTO;
-import com.user_service.user_service.dto.RegisterRequestDTO;
+import com.user_service.user_service.dto.customer.LoginRequestDTO;
+import com.user_service.user_service.dto.customer.LoginResponseDTO;
+import com.user_service.user_service.dto.customer.RegisterRequestDTO;
 import com.user_service.user_service.dto.VerifyOtpDTO;
 import com.user_service.user_service.enums.Role;
 import com.user_service.user_service.enums.UserStatus;
+import com.user_service.user_service.exception.BadRequestException;
+import com.user_service.user_service.exception.ResourceNotFoundException;
 import com.user_service.user_service.model.User;
 import com.user_service.user_service.repository.UserRepository;
 import com.user_service.user_service.security.JwtUtil;
 import com.user_service.user_service.service.EmailService;
 import com.user_service.user_service.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder; // Import this
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,114 +24,122 @@ import java.util.Random;
 @Service
 public class UserServiceImpl implements UserService {
 
-    @Autowired
-    private UserRepository repository;
-
-    @Autowired
-    private EmailService emailService; // Inject Email Service
-
+    private final UserRepository repository;
+    private final EmailService emailService;
     private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(JwtUtil jwtUtil) {
+    @Autowired
+    public UserServiceImpl(UserRepository repository,
+                           EmailService emailService,
+                           JwtUtil jwtUtil,
+                           PasswordEncoder passwordEncoder) {
+        this.repository = repository;
+        this.emailService = emailService;
         this.jwtUtil = jwtUtil;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    // ---------------- REGISTER (UPDATED) ----------------
+    // ---------------- SEND OTP ----------------
+    @Override
+    public void sendOtp(String email) {
+        User user = repository.findByEmail(email).orElse(null);
 
+        if (user == null) {
+            user = new User();
+            user.setEmail(email);
+            user.setRole(Role.CUSTOMER);
+            user.setVerified(false);
+            user.setStatus(UserStatus.ACTIVE);
+            user.setCreatedAt(LocalDateTime.now());
+        }
+
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        user.setOtp(otp);
+        user.setOtpExpiration(LocalDateTime.now().plusMinutes(10)); // 10 mins expiry
+        user.setUpdatedAt(LocalDateTime.now());
+
+        repository.save(user);
+
+        System.out.println("DEBUG OTP for " + email + ": " + otp);
+        emailService.sendOtpEmail(email, otp);
+    }
+
+    // ---------------- REGISTER (CUSTOMER) ----------------
     @Override
     public String register(RegisterRequestDTO dto) {
 
-        // Check if user exists
         User existingUser = repository.findByEmail(dto.getEmail()).orElse(null);
-
-        // 1. If user exists AND is already verified -> Error
         if (existingUser != null && existingUser.isVerified()) {
-            throw new RuntimeException("Email already exists and is verified.");
+            throw new BadRequestException("Email already exists and is verified. Please login.");
         }
 
-        // 2. If user exists but NOT verified -> We overwrite/resend OTP
-        //    Otherwise -> Create new User
         User user = (existingUser != null) ? existingUser : new User();
 
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword());
+
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+
         user.setRole(Role.CUSTOMER);
         user.setStatus(UserStatus.ACTIVE);
-
-        // IMPORTANT: Set verified to false initially
         user.setVerified(false);
 
-        // Generate 6-digit OTP
         String otp = String.format("%06d", new Random().nextInt(999999));
         user.setOtp(otp);
-        user.setOtpExpiration(LocalDateTime.now().plusMinutes(10)); // Expires in 10 mins
+        user.setOtpExpiration(LocalDateTime.now().plusMinutes(10));
 
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
         repository.save(user);
 
-        // Send Email
         emailService.sendOtpEmail(dto.getEmail(), otp);
 
         return "OTP sent to email. Please verify to complete registration.";
     }
 
-    // ---------------- VERIFY OTP (NEW) ----------------
-
+    // ---------------- VERIFY OTP ----------------
     @Override
-    public String verifyOtp(VerifyOtpDTO dto) {
+    public void verifyOtp(VerifyOtpDTO dto) {
         User user = repository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (user.isVerified()) {
-            return "User already verified";
-        }
-
-        // Check if OTP matches
         if (user.getOtp() == null || !user.getOtp().equals(dto.getOtp())) {
-            throw new RuntimeException("Invalid OTP");
+            throw new BadRequestException("Invalid OTP");
         }
 
-        // Check expiration
         if (user.getOtpExpiration().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("OTP has expired");
+            throw new BadRequestException("OTP has expired");
         }
 
-        // Verification Successful
         user.setVerified(true);
-        user.setOtp(null);           // Clear OTP
-        user.setOtpExpiration(null); // Clear Expiration
+        user.setOtp(null);
+        user.setOtpExpiration(null);
         repository.save(user);
-
-        return "Account verified successfully!";
     }
 
-    // ---------------- LOGIN (UPDATED) ----------------
-
+    // ---------------- LOGIN ----------------
     @Override
     public LoginResponseDTO login(LoginRequestDTO dto) {
 
         User user = repository.findByEmail(dto.getEmail())
-                .orElseThrow(() ->
-                        new RuntimeException("Invalid email or password"));
+                .orElseThrow(() -> new BadRequestException("Invalid email or password"));
 
-        // 1. Check Verification Status
-//        if (!user.isVerified()) {
-//            throw new RuntimeException("Account not verified. Please verify your email first.");
-//        }
+        if (!user.isVerified()) {
+            throw new BadRequestException("Account not verified. Please verify your email first.");
+        }
 
-        if (!UserStatus.ACTIVE.equals(user.getStatus())) {
-            throw new RuntimeException("User account is blocked");
+        if (UserStatus.BLOCKED.equals(user.getStatus()) || !UserStatus.ACTIVE.equals(user.getStatus())) {
+            throw new BadRequestException("User account is blocked or inactive");
         }
 
         if (user.getRole() == null) {
-            throw new RuntimeException("User role not assigned");
+            throw new BadRequestException("User role not assigned");
         }
 
-        if (!user.getPassword().equals(dto.getPassword())) {
-            throw new RuntimeException("Invalid email or password");
+        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
+            throw new BadRequestException("Invalid email or password");
         }
 
         String token = jwtUtil.generateToken(
@@ -139,18 +150,13 @@ public class UserServiceImpl implements UserService {
         return new LoginResponseDTO(token, user.getRole().name());
     }
 
-
-    // ---------------- PROFILE ----------------
+    // ---------------- PROFILE & ADMIN ----------------
 
     @Override
     public User getUserById(String userId) {
-
         return repository.findById(userId)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
-
-    // ---------------- ADMIN ----------------
 
     @Override
     public List<User> getAllUsers() {
@@ -159,30 +165,22 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void updateStatus(String id, String status) {
-
         User user = repository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
-
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         try {
-            UserStatus newStatus =
-                    UserStatus.valueOf(status.toUpperCase());
-
+            UserStatus newStatus = UserStatus.valueOf(status.toUpperCase());
             user.setStatus(newStatus);
             user.setUpdatedAt(LocalDateTime.now());
-
             repository.save(user);
-
         } catch (IllegalArgumentException ex) {
-            throw new RuntimeException("Invalid user status");
+            throw new BadRequestException("Invalid user status");
         }
     }
 
     @Override
     public void updateRole(String userId, Role role) {
         User user = repository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         user.setRole(role);
         user.setUpdatedAt(LocalDateTime.now());
         repository.save(user);

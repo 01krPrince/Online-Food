@@ -1,9 +1,9 @@
 package com.user_service.user_service.service;
 
 
-import com.user_service.user_service.dto.LoginRequestDTO;
-import com.user_service.user_service.dto.LoginResponseDTO;
-import com.user_service.user_service.dto.RegisterRequestDTO;
+import com.user_service.user_service.dto.customer.LoginRequestDTO;
+import com.user_service.user_service.dto.customer.LoginResponseDTO;
+import com.user_service.user_service.dto.customer.RegisterRequestDTO;
 import com.user_service.user_service.dto.VerifyOtpDTO;
 import com.user_service.user_service.enums.Role;
 
@@ -11,6 +11,8 @@ public interface UserService {
     String register(RegisterRequestDTO dto);
 
     LoginResponseDTO login(LoginRequestDTO dto);
+
+    void sendOtp(String email);
 
     Object getUserById(String userId);
 
@@ -20,6 +22,6 @@ public interface UserService {
 
     public void updateRole(String userId, Role role);
 
-    String verifyOtp(VerifyOtpDTO dto);
+    void verifyOtp(VerifyOtpDTO dto);
 
 }

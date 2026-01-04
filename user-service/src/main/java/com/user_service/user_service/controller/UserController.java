@@ -1,8 +1,8 @@
 package com.user_service.user_service.controller;
 
-import com.user_service.user_service.dto.LoginRequestDTO;
-import com.user_service.user_service.dto.LoginResponseDTO;
-import com.user_service.user_service.dto.RegisterRequestDTO;
+import com.user_service.user_service.dto.customer.LoginRequestDTO;
+import com.user_service.user_service.dto.customer.LoginResponseDTO;
+import com.user_service.user_service.dto.customer.RegisterRequestDTO;
 import com.user_service.user_service.dto.VerifyOtpDTO;
 import com.user_service.user_service.enums.Role;
 import com.user_service.user_service.exception.UserException;
@@ -35,7 +35,8 @@ public class UserController {
 
     @PostMapping("/verify-otp")
     public ResponseEntity<String> verifyOtp(@RequestBody VerifyOtpDTO dto) {
-        return ResponseEntity.ok(service.verifyOtp(dto));
+        service.verifyOtp(dto);
+        return ResponseEntity.ok("Account verified successfully!");
     }
 
     @PostMapping("/login")
